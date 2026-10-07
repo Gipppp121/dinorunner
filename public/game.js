@@ -1,5 +1,5 @@
 // Dinorunner client: endless runner, live ghosts of other players, leaderboard.
-import { RUN, speedAt, COLORS } from './rules.js?v=6';
+import { RUN, speedAt, COLORS } from './rules.js?v=7';
 
 const $ = id => document.getElementById(id);
 const cv = $('c'), g = cv.getContext('2d');
@@ -75,24 +75,49 @@ setMute(muted); $('mute').onclick = e => { e.stopPropagation(); audio(); setMute
 
 // ---------- net ----------
 let ws, myId = 0, myColor = COLORS[0], live = [], lb = { all: [], today: [] }, lbTab = 'today';
+// live data from the server: names by id, the top list, and the ghosts near you (smoothed between updates)
+const nameOf = new Map(), ghosts = new Map(); let top = [], liveRank = 0, liveRun = 0;
+function ghostList() {
+  const now = performance.now() / 1000, out = [];
+  for (const [id, gh] of ghosts) {
+    const k = Math.min(1, (now - gh.at) / .3), dt = Math.min(.6, now - gh.at);
+    const s = gh.alive ? gh.s + gh.rate * dt : gh.s, y = gh.y0 + (gh.y1 - gh.y0) * k;
+    out.push([id, nameOf.get(id) || 'dino', Math.floor(s), Math.max(0, y), gh.duck, gh.alive, COLORS[gh.ci] || COLORS[0]]);
+  }
+  return out.sort((a, b) => b[2] - a[2]);
+}
 const tok = store.get('dr_tok') || Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 8); store.set('dr_tok', tok);
 $('name').value = store.get('dr_name') || '';
 function connect() {
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
-  ws.onopen = () => { if (myName) send({ t: 'name', name: myName, tok }); };
+  ws.onopen = () => { if (myName) send({ t: 'name', name: myName, tok }); if (document.hidden) send({ t: 'vis', h: 1 }); };
   ws.onmessage = e => { const m = JSON.parse(e.data);
     if (m.t === 'hi') { myId = m.id; myColor = m.color; }
-    else if (m.t === 'live') { live = m.ps; $('online').textContent = m.online; renderLive(); }
+    else if (m.t === 'g') {
+      if (m.n) for (const k in m.n) nameOf.set(+k, m.n[k]);
+      const now = performance.now() / 1000, seen = new Set();
+      for (const [id, s, y, f, ci] of m.g) {
+        seen.add(id); const o = ghosts.get(id), cur = o ? ghostList().find(x => x[0] === id) : null;
+        const rate = o && now > o.at ? Math.max(0, Math.min(60, (s - o.s) / (now - o.at))) : 0;
+        ghosts.set(id, { s, rate: o ? o.rate * .5 + rate * .5 : 0, y0: cur ? cur[3] : y, y1: y, at: now, duck: f & 1, alive: (f & 2) ? 1 : 0, ci });
+      }
+      for (const id of [...ghosts.keys()]) if (!seen.has(id)) ghosts.delete(id);
+    }
+    else if (m.t === 'top') {
+      if (m.n) for (const k in m.n) nameOf.set(+k, m.n[k]);
+      top = m.ps; liveRank = m.me || 0; liveRun = m.run; $('online').textContent = m.on; renderLive();
+    }
     else if (m.t === 'lb') { lb = m; renderLb(); } };
   ws.onclose = () => setTimeout(connect, 2000);
 }
 const send = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 let myName = store.get('dr_name') || '';
 connect();
+document.addEventListener('visibilitychange', () => send({ t: 'vis', h: document.hidden ? 1 : 0 }));
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 function renderLive() {
-  const ol = $('live'); if (!live.length) { ol.innerHTML = '<div class="empty">nobody is running right now</div>'; return; }
-  ol.innerHTML = live.slice(0, 8).map(([id, n, s, , , alive, col], i) => `<li class="${id === myId ? 'me' : ''} ${alive ? '' : 'dead'}"><span class="n">${i + 1}</span><span class="d" style="background:${col}"></span><span class="nm">${esc(n)}${id === myId ? ' (you)' : ''}</span><span class="z" title="${ZONES[zoneOf(s).i].name}">${ZONES[zoneOf(s).i].icon}</span><span class="s">${s}</span></li>`).join('');
+  const ol = $('live'); if (!top.length) { ol.innerHTML = '<div class="empty">nobody is running right now</div>'; return; }
+  ol.innerHTML = top.map(([id, s, alive, ci]) => [id, nameOf.get(id) || 'dino', s, 0, 0, alive, COLORS[ci] || COLORS[0]]).map(([id, n, s, , , alive, col], i) => `<li class="${id === myId ? 'me' : ''} ${alive ? '' : 'dead'}"><span class="n">${i + 1}</span><span class="d" style="background:${col}"></span><span class="nm">${esc(n)}${id === myId ? ' (you)' : ''}</span><span class="z" title="${ZONES[zoneOf(s).i].name}">${ZONES[zoneOf(s).i].icon}</span><span class="s">${s}</span></li>`).join('');
 }
 function renderLb() {
   const list = lb[lbTab] || [], ol = $('lb');
@@ -346,7 +371,8 @@ function draw() {
   // obstacles
   for (const o of obs) { if (o.k === 'cactus') for (const p of o.parts) ground(o.x + p.dx, p, o); else flyer(o); }
   // ghosts: placed by how far ahead or behind they are
-  const ref = state === 'menu' ? (live[0] ? live[0][2] : 0) : score;
+  live = ghostList();
+  const ref = state === 'menu' ? (top[0] ? top[0][1] : 0) : score;
   const edge = [];
   let gi = 0; const tags = [];
   for (const [id, name, s, y, duck, alive, col] of live) {
@@ -381,7 +407,7 @@ function hud(ink, dim, acc, N, ref) {
   if (state !== 'menu') {
     g.fillStyle = N > .5 ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.1)'; g.fillRect(18, 32, 150, 4); g.fillStyle = acc; g.fillRect(18, 32, 150 * z.frac, 4);
     g.fillStyle = dim; g.fillText(`next ${z.next.icon} ${z.next.name} in ${z.left}`, 18, 50);
-    if (live.length > 1) { const r = live.findIndex(p => p[0] === myId); if (r >= 0) { g.fillStyle = acc; g.font = 'bold 10px ui-monospace,monospace'; g.fillText(`LIVE #${r + 1} of ${live.length}`, 18, 62); } }
+    if (liveRun > 1 && liveRank && state === 'run') { g.fillStyle = acc; g.font = 'bold 10px ui-monospace,monospace'; g.fillText(`LIVE #${liveRank} of ${liveRun}`, 18, 62); }
   }
   // score, best, speed
   g.font = '16px ui-monospace,monospace'; g.textAlign = 'right';
@@ -414,7 +440,7 @@ let last = performance.now(), acc = 0;
 function frame(nowMs) {
   acc += Math.min(.1, (nowMs - last) / 1000); last = nowMs;
   while (acc >= 1 / 120) { step(1 / 120); acc -= 1 / 120; }
-  if (state === 'menu') setZone(zoneOf(live[0] ? live[0][2] : 0).i, false);
+  if (state === 'menu') setZone(zoneOf(top[0] ? top[0][1] : 0).i, false);
   draw(); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

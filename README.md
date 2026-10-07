@@ -32,7 +32,9 @@ People on the same Wi-Fi can join with your local IP, for example http://192.168
 |---|---|---|
 | `PORT` | 8080 | port for the page and the server |
 | `MAX_CONN` | 600 | connections on the whole server |
-| `MAX_PER_IP` | 4 | connections from one address |
+| `UPSTASH_REDIS_REST_URL` | none | Upstash database URL, keeps the leaderboard across restarts |
+| `UPSTASH_REDIS_REST_TOKEN` | none | Upstash token for that database |
+| `MAX_PER_IP` | 10 | connections from one address (phones on one carrier often share one) |
 
 ## Put it online
 
@@ -43,7 +45,16 @@ Any host that runs Node and supports WebSockets works. On Render:
 3. Build command `npm install`, start command `npm start`.
 4. Open the `onrender.com` link it gives you and post it.
 
-The leaderboard is saved to `data/leaderboard.json`. On the free Render plan the disk is wiped on every restart and redeploy, so the scores start over. Add a Render disk mounted at `data/` if you want them to stay.
+### Keep the leaderboard
+
+The leaderboard is saved to `data/leaderboard.json`, but free hosting wipes that file on every restart, redeploy and sleep. To keep the scores, give it a free Upstash Redis database:
+
+1. On upstash.com create a Redis database (Free plan, region Frankfurt).
+2. Copy `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from its REST API section.
+3. Add both as environment variables on your host and redeploy.
+
+The log then says `leaderboard: loaded N from upstash` on start. Writes are batched to one every 10 seconds at most, plus one on shutdown, so it stays well inside the free plan.
+
 
 ## Controls
 
@@ -79,11 +90,13 @@ After the Moon Base it starts over from the Desert as lap 2.
 
 ## How it works
 
-Every player runs their own world in the browser. Ten times a second the browser sends its score and the dino position, and the server sends everyone the list of who is running. That list is what draws the ghosts and the RUNNING NOW panel.
+Every player runs their own world in the browser. Ten times a second the browser sends its score and the dino position. About three times a second the server sends each player only the 6 runners closest to their score, the ones they can actually see as ghosts, and the browser smooths them between updates. Once a second everyone gets the top 8 and their live place. Names go out once per player, not with every update.
+
+That keeps traffic at roughly 0.5 KB per second per player, so 100 people running at once is about 170 MB an hour. Hidden tabs get nothing until they come back.
 
 `public/rules.js` has the speed curve and is loaded by both sides. The server uses it to work out the highest score possible for how long you have been running, and cuts anything above that. Sending a fake score of 999999 three seconds into a run gets saved as about 40.
 
-What keeps it up: messages over 1 KB are dropped, every connection is rate limited, names are cleaned, dead connections are closed after 15 seconds, slow clients are skipped instead of queued. `/health` returns how many are online, how many are running and the top score.
+What keeps it up: pages and scripts are sent gzipped, the leaderboard is pushed only when the visible top 10 changes, messages over 1 KB are dropped, every connection is rate limited, names are cleaned, dead connections are closed after 15 seconds, slow clients are skipped instead of queued. `/health` returns how many are online, how many are running and the top score.
 
 The page has `twitter:card` player tags that point at `/embed` on whatever domain serves it, so once it is on https the link can open as a playable card on X.
 
