@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Dinorunner · race everyone online</title>
+<meta name="twitter:card" content="player">
+<meta name="twitter:title" content="Dinorunner">
+<meta name="twitter:description" content="Endless runner. Everyone online runs at the same time as ghosts. Beat the leaderboard.">
+<meta name="twitter:player" content="__ORIGIN__/embed">
+<meta name="twitter:player:width" content="480">
+<meta name="twitter:player:height" content="480">
+<meta name="twitter:image" content="__ORIGIN__/preview.png">
+<meta property="og:title" content="Dinorunner">
+<meta property="og:image" content="__ORIGIN__/preview.png">
+<style>
+:root{--bg:#f7f5ef;--ink:#2b2b2b;--dim:#8a8781;--line:#dedad0;--card:#fff;--acc:#2fbf71}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body.night{--bg:#16181d;--ink:#e9e6df;--dim:#8e8a82;--line:#2c2f36;--card:#1d2026}
+body{transition:background .8s,color .8s}
+.wrap{max-width:900px;margin:0 auto;padding:14px 14px 24px}
+header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+h1{margin:0;font-size:26px;letter-spacing:.06em}h1 b{color:var(--acc)}
+.sub{color:var(--dim);font-size:12px}
+.online{margin-left:auto;font-size:12px;color:var(--dim)}.online i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--acc);margin-right:6px;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+#stage{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);touch-action:none;aspect-ratio:800/260}
+canvas{display:block;width:100%;height:100%}
+body.embed #stage{aspect-ratio:auto;height:290px}
+@media (max-width:620px){#stage{aspect-ratio:auto;height:min(52vh,420px)}}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(247,245,239,.75);text-align:center;padding:12px}
+body.night #overlay{background:rgba(22,24,29,.75)}
+#overlay h2{margin:0;font-size:22px}#overlay p{margin:0;color:var(--dim);font-size:12px;line-height:1.6}
+#overlay input{font:inherit;font-size:15px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);text-align:center;width:220px;-webkit-user-select:text;user-select:text}
+#overlay button{font:inherit;font-size:16px;font-weight:700;padding:10px 26px;border-radius:24px;border:0;background:var(--acc);color:#fff;cursor:pointer}
+#overlay .big{font-size:34px;font-weight:800;color:var(--acc)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-height:120px}
+.card h3{margin:0 0 8px;font-size:12px;letter-spacing:.1em;color:var(--dim);display:flex;gap:8px;align-items:center}
+.tabs{margin-left:auto;display:flex;gap:4px}.tabs span{cursor:pointer;padding:2px 8px;border-radius:10px;font-size:11px}.tabs span.on{background:var(--ink);color:var(--card)}
+ol{margin:0;padding:0;list-style:none;font-size:13px}
+li{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}li:last-child{border:0}
+li .n{width:22px;color:var(--dim)}li .d{width:10px;height:10px;border-radius:3px;flex:none}li .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}li .s{font-weight:700}
+li.me{background:rgba(47,191,113,.12);border-radius:6px}
+li.dead .nm,li.dead .s{opacity:.45;text-decoration:line-through}
+.empty{color:var(--dim);font-size:12px}
+.keys{margin-top:10px;color:var(--dim);font-size:11px;text-align:center}
+#mute{position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:16px;cursor:pointer;z-index:3}
+body.embed .wrap{padding:6px}body.embed header{margin-bottom:6px}body.embed h1{font-size:18px}body.embed .sub{display:none}
+body.embed #overlay{gap:6px}body.embed #overlay h2{font-size:18px}body.embed .cols{gap:6px;margin-top:6px}body.embed .card{padding:8px 10px;min-height:0}body.embed li{padding:2px 0;font-size:11px}body.embed .keys{display:none}
+@media (max-width:620px){.cols{grid-template-columns:1fr}.sub{display:none}}
+</style></head><body>
+<div class="wrap">
+  <header><h1>DINO<b>RUNNER</b></h1><span class="sub">everyone online runs at the same time</span><span class="online"><i></i><span id="online">0</span> online</span></header>
+  <div id="stage">
+    <canvas id="c" width="800" height="260"></canvas>
+    <button id="mute" title="sound (M)">🔊</button>
+    <div id="overlay">
+      <h2 id="ovTitle">Race everyone online</h2>
+      <p id="ovText">Other runners show up as ghosts. They can't touch you.<br>Get further than them.</p>
+      <input id="name" maxlength="14" placeholder="your name">
+      <button id="play">PLAY</button>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="card"><h3>RUNNING NOW</h3><ol id="live"></ol></div>
+    <div class="card"><h3>LEADERBOARD <span class="tabs"><span data-b="today" class="on">today</span><span data-b="all">all time</span></span></h3><ol id="lb"></ol></div>
+  </div>
+  <div class="keys" id="keys">space / ↑ jump · hold for higher · ↓ duck · M sound</div>
+</div>
+<script type="module" src="./game.js?v=4"></script>
+</body></html>
