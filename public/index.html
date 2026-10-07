@@ -2,14 +2,20 @@
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>Dinorunner · race everyone online</title>
+<meta name="description" content="The Chrome dino game, but everyone who opens the link races live. 6 zones, daily leaderboard.">
 <meta name="twitter:card" content="player">
-<meta name="twitter:title" content="Dinorunner">
-<meta name="twitter:description" content="Endless runner. Everyone online runs at the same time as ghosts. Beat the leaderboard.">
+<meta name="twitter:site" content="@gippp69">
+<meta name="twitter:title" content="Join the Dinorunner race">
+<meta name="twitter:description" content="Everyone who opens this embed runs in the same race.">
 <meta name="twitter:player" content="__ORIGIN__/embed">
 <meta name="twitter:player:width" content="480">
 <meta name="twitter:player:height" content="480">
 <meta name="twitter:image" content="__ORIGIN__/preview.png">
-<meta property="og:title" content="Dinorunner">
+<meta name="twitter:image:alt" content="Dinorunner: a dino runs through a neon city next to other players">
+<meta property="og:type" content="website">
+<meta property="og:url" content="__ORIGIN__/">
+<meta property="og:title" content="Join the Dinorunner race">
+<meta property="og:description" content="Everyone who opens this link runs in the same race.">
 <meta property="og:image" content="__ORIGIN__/preview.png">
 <style>
 :root{--bg:#f7f5ef;--ink:#2b2b2b;--dim:#8a8781;--line:#dedad0;--card:#fff;--acc:#2fbf71}
@@ -26,7 +32,8 @@ h1{margin:0;font-size:26px;letter-spacing:.06em}h1 b{color:var(--acc)}
 @keyframes pulse{50%{opacity:.35}}
 #stage{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);touch-action:none;aspect-ratio:800/260}
 canvas{display:block;width:100%;height:100%}
-body.embed #stage{aspect-ratio:auto;height:290px}
+body.embed{overflow:hidden}body.embed #stage{aspect-ratio:auto;height:min(calc(100vh - 168px),54vw);min-height:200px}
+body.embed .cols{grid-template-columns:1fr 1fr!important}body.embed li:nth-child(n+6){display:none}body.embed .card h3{margin-bottom:4px;font-size:10px}body.embed .tabs span{font-size:9px;padding:1px 6px}body.embed #overlay input{width:180px;padding:7px 10px;font-size:13px}body.embed #overlay button{padding:8px 22px;font-size:14px}body.embed #overlay p{font-size:11px}
 @media (max-width:620px){#stage{aspect-ratio:auto;height:min(52vh,420px,72vw)}}
 #overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(247,245,239,.75);text-align:center;padding:12px}
 body.night #overlay{background:rgba(22,24,29,.75)}
@@ -68,5 +75,5 @@ body.embed #overlay{gap:6px}body.embed #overlay h2{font-size:18px}body.embed .co
   </div>
   <div class="keys" id="keys">space / ↑ jump · hold for higher · ↓ duck · M sound</div>
 </div>
-<script type="module" src="./game.js?v=7"></script>
+<script type="module" src="./game.js?v=8"></script>
 </body></html>

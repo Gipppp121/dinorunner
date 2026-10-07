@@ -1,12 +1,13 @@
 // Dinorunner client: endless runner, live ghosts of other players, leaderboard.
-import { RUN, speedAt, COLORS } from './rules.js?v=7';
+import { RUN, speedAt, COLORS } from './rules.js?v=8';
 
 const $ = id => document.getElementById(id);
 const cv = $('c'), g = cv.getContext('2d');
 const W = 800, PX = 3, DINO_X = 150;
 let H = 260, GROUND = 222;
 const TOUCH = matchMedia('(pointer: coarse)').matches;
-if (window.top !== window.self) document.body.classList.add('embed');
+let framed = true; try { framed = window.top !== window.self; } catch {}
+if (framed || location.pathname === '/embed') document.body.classList.add('embed');
 if (TOUCH) $('keys').textContent = 'tap to jump · hold for higher · hold the left side to duck';
 // the view is always 800 game pixels wide so everyone sees the same distance ahead; tall screens just get more sky
 function fit() {
