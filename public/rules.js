@@ -1,5 +1,5 @@
 // Shared between server and client: how fast a run can go, so the server can cap scores.
-export const RUN = { v0: 360, accel: 7, vmax: 900, perPx: 0.025 };
+export const RUN = { v0: 360, accel: 6, vmax: 1250, perPx: 0.025 };
 export function speedAt(t) { return Math.min(RUN.vmax, RUN.v0 + RUN.accel * t); }
 export function maxDistance(t) {
   const tc = (RUN.vmax - RUN.v0) / RUN.accel;

@@ -58,10 +58,24 @@ On a phone: tap the right side of the game to jump, hold the left side to duck.
 
 ## What is in a run
 
-- Cacti in groups of one to three.
-- Drones after 250 points. Low ones you jump, middle ones you duck under, high ones you just keep running.
-- Speed goes up the whole time.
-- Day turns to night every 700 points, a chime every 100.
+Six zones, one after another. Every zone has its own sky, ground, obstacles and flyers:
+
+| zone | from | what is in the way |
+|---|---|---|
+| 🌵 Desert | 0 | cacti, drones |
+| 🌊 Ocean | 350 | coral, fish |
+| ❄️ Tundra | 800 | ice spikes, birds |
+| 🌃 Neon City | 1300 | cones, road blocks, police drones |
+| 🔴 Mars | 1900 | red rocks, meteors |
+| 🚀 Moon Base | 2600 | crystals, UFOs, lower gravity |
+
+After the Moon Base it starts over from the Desert as lap 2.
+
+- Speed keeps going up for about two and a half minutes, from x1.0 to x3.5. The jump gets snappier as you go faster, same height, less time in the air, so it stays hard but never turns into a coin flip.
+- Later zones send more flyers and bigger cactus groups.
+- Flyers come at three heights. Low ones you jump, middle ones you duck under, high ones you just keep running.
+- The HUD shows the zone you are in, how far the next one is, your live place among everyone running, and a speed meter.
+- Both lists show which zone each player reached.
 
 ## How it works
 
